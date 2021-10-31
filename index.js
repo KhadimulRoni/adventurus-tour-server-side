@@ -1,10 +1,12 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
+const ObjectId = require('mongodb').ObjectId
+
 const cors = require('cors');
 require("dotenv").config();
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;
 
 // middle ware
 app.use(cors());
@@ -24,16 +26,50 @@ async function run(){
         // console.log('connected to database');
         const database = client.db('adventureTours');
         const tourCollection = database.collection('tours');
+        const specialToursCollection = database.collection('specialTours');
+        
+
+        // GET API
+        app.get('/specialTours', async(req, res) => {
+            const cursor = specialToursCollection.find({});
+            const specialTours = await cursor.toArray();
+            res.send(specialTours);
+        })
+
+        app.get('/tours', async(req, res) => {
+            const cursor = tourCollection.find({});
+            const tours = await cursor.toArray();
+            res.send(tours);
+
+        })
+
+        // Get single service
+        app.get('/specialTours/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log('getting special tour', id)
+            const query = {_id: ObjectId(id)};
+            const specialTour = await specialToursCollection.findOne(query);
+            res.json(specialTour);
+        } )
+
+
 
         // post API
+        app.post('specialTours', async (req, res) => {
+            const specialTour = req.body;
+            const result = await specialToursCollection.insertOne(specialTour);
+            res.json(result)
+        })
+
+
         app.post('/tours', async(req, res) => {
-            
-            console.log('hit the post api')
+            const tour = req.body;
+            console.log('hit the post api',tour)
 
-            // const result = await tourCollection.insertOne(tour);
-            // console.log(result);
+            const result = await tourCollection.insertOne(tour);
+            console.log(result);
 
-            res.send('post hitted')
+            res.json(result)
         })
     }
     finally{
